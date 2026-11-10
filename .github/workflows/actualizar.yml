@@ -1,0 +1,38 @@
+name: Actualizar datos WASDE / PSD
+
+on:
+  schedule:
+    # El WASDE se publica a las 12:00 hora del Este (16:00/17:00 UTC).
+    # Se revisa de lunes a viernes a las 17:30 y 20:00 UTC: si no hay nada nuevo, no cambia nada.
+    - cron: "30 17 * * 1-5"
+    - cron: "0 20 * * 1-5"
+  workflow_dispatch: {}   # botón "Run workflow" para correrlo a mano
+
+permissions:
+  contents: write
+
+concurrency:
+  group: actualizar
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Descargar fuentes oficiales y regenerar el tablero
+        run: python scripts/build.py
+      - name: Guardar cambios si hay datos nuevos
+        run: |
+          git config user.name "wasde-bot"
+          git config user.email "wasde-bot@users.noreply.github.com"
+          git add docs/data.js data/wasde_xml
+          if git diff --cached --quiet; then
+            echo "Sin datos nuevos."
+          else
+            git commit -m "Datos actualizados $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git push
+          fi
