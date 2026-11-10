@@ -1,0 +1,62 @@
+{
+ "2026-01": {
+  "fetched": "2026-11-10 16:30 UTC",
+  "file": "wasde0126",
+  "pdf": "https://usda.library.cornell.edu/sites/default/release-files/795722/wasde0126.pdf",
+  "xml": "https://usda.library.cornell.edu/sites/default/release-files/795722/wasde0126.xml"
+ },
+ "2026-02": {
+  "fetched": "2026-11-10 16:30 UTC",
+  "file": "wasde0226",
+  "pdf": "https://usda.library.cornell.edu/sites/default/release-files/795765/wasde0226.pdf",
+  "xml": "https://usda.library.cornell.edu/sites/default/release-files/795765/wasde0226.xml"
+ },
+ "2026-03": {
+  "fetched": "2026-11-10 16:30 UTC",
+  "file": "wasde0326",
+  "pdf": "https://usda.library.cornell.edu/sites/default/release-files/795813/wasde0326.pdf",
+  "xml": "https://usda.library.cornell.edu/sites/default/release-files/795813/wasde0326.xml"
+ },
+ "2026-04": {
+  "fetched": "2026-11-10 16:30 UTC",
+  "file": "wasde0426",
+  "pdf": "https://usda.library.cornell.edu/sites/default/release-files/795855/wasde0426.pdf",
+  "xml": "https://usda.library.cornell.edu/sites/default/release-files/795855/wasde0426.xml"
+ },
+ "2026-05": {
+  "fetched": "2026-11-10 16:30 UTC",
+  "file": "wasde0526v2",
+  "pdf": "https://usda.library.cornell.edu/sites/default/release-files/795903/wasde0526v2.pdf",
+  "xml": "https://usda.library.cornell.edu/sites/default/release-files/795903/wasde0526v2.xml"
+ },
+ "2026-06": {
+  "fetched": "2026-11-10 16:30 UTC",
+  "file": "wasde0626v2",
+  "pdf": "https://usda.library.cornell.edu/sites/default/release-files/795937/wasde0626v2.pdf",
+  "xml": "https://usda.library.cornell.edu/sites/default/release-files/795937/wasde0626v2.xml"
+ },
+ "2026-07": {
+  "fetched": "2026-11-10 16:30 UTC",
+  "file": "wasde0726",
+  "pdf": "https://usda.library.cornell.edu/sites/default/release-files/795974/wasde0726.pdf",
+  "xml": "https://usda.library.cornell.edu/sites/default/release-files/795974/wasde0726.xml"
+ },
+ "2026-08": {
+  "fetched": "2026-11-10 16:30 UTC",
+  "file": "wasde0826",
+  "pdf": "https://usda.library.cornell.edu/sites/default/release-files/796014/wasde0826.pdf",
+  "xml": "https://usda.library.cornell.edu/sites/default/release-files/796014/wasde0826.xml"
+ },
+ "2026-09": {
+  "fetched": "2026-11-10 16:30 UTC",
+  "file": "wasde0926",
+  "pdf": "https://usda.library.cornell.edu/sites/default/release-files/796054/wasde0926.pdf",
+  "xml": "https://usda.library.cornell.edu/sites/default/release-files/796054/wasde0926.xml"
+ },
+ "2026-10": {
+  "fetched": "2026-11-10 16:30 UTC",
+  "file": "wasde1026",
+  "pdf": "https://usda.library.cornell.edu/sites/default/release-files/796099/wasde1026.pdf",
+  "xml": "https://usda.library.cornell.edu/sites/default/release-files/796099/wasde1026.xml"
+ }
+}
