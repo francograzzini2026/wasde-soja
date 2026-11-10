@@ -58,5 +58,11 @@
   "file": "wasde1026",
   "pdf": "https://usda.library.cornell.edu/sites/default/release-files/796099/wasde1026.pdf",
   "xml": "https://usda.library.cornell.edu/sites/default/release-files/796099/wasde1026.xml"
+ },
+ "2026-11": {
+  "fetched": "2026-11-10 22:41 UTC",
+  "file": "wasde1126",
+  "pdf": "https://usda.library.cornell.edu/sites/default/release-files/796142/wasde1126.pdf",
+  "xml": "https://usda.library.cornell.edu/sites/default/release-files/796142/wasde1126.xml"
  }
 }
