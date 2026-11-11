@@ -179,11 +179,11 @@
   }
 
   // ---------- estado
-  const st = { tab: "resumen", comm: "soja", country: "AR", supAttr: "prod", demAttr: "dom", year: null, evReg: "World", evAttr: "es", revComm: "complejo", revReg: "", hist: 10 };
+  const st = { tab: "resumen", comm: "soja", country: "AR", supAttr: "prod", demAttr: "dom", year: null, evReg: "World", evAttr: "es", revComm: "complejo", revReg: "", revMy: "", pComm: "complejo", pReg: "United States", hist: 10 };
   try { Object.assign(st, JSON.parse(localStorage.getItem("wasde-soja") || "{}")); } catch (e) { /* sin storage */ }
   const save = () => { try { localStorage.setItem("wasde-soja", JSON.stringify(st)); } catch (e) { /* */ } };
 
-  const TABS = [["resumen", "Resumen"], ["mundo", "Balance mundial"], ["paises", "Países"], ["complejo", "Complejo soja"], ["evolucion", "Evolución WASDE"], ["usa", "EE.UU. (unidades USDA)"], ["fuentes", "Fuentes y método"]];
+  const TABS = [["resumen", "Resumen"], ["mundo", "Balance mundial"], ["paises", "Países"], ["complejo", "Complejo soja"], ["evolucion", "Evolución WASDE"], ["usa", "Balance por país (WASDE)"], ["fuentes", "Fuentes y método"]];
   function renderTabs() {
     $("#tabs").innerHTML = TABS.map(([k, l]) => `<button role="tab" aria-selected="${st.tab === k}" data-tab="${k}">${l}</button>`).join("");
     $("#tabs").onclick = (e) => { const b = e.target.closest("[data-tab]"); if (b) { st.tab = b.dataset.tab; save(); render(); } };
@@ -237,13 +237,17 @@
         }
       }
     }
+    const myOpts = [...new Set(rows.map((r) => r.my))].sort().reverse();
+    if (st.revMy && !myOpts.includes(st.revMy)) st.revMy = "";
+    if (st.revMy) rows.splice(0, rows.length, ...rows.filter((r) => r.my === st.revMy));
     if (one) rows.sort((x, y) => (list.indexOf(x.c) - list.indexOf(y.c)) || y.my.localeCompare(x.my));
     else rows.sort((x, y) => (AGG.has(x.region) - AGG.has(y.region)) || Math.abs(y.d) - Math.abs(x.d));
     const nChg = rows.filter((r) => Math.abs(r.d) > 0.0049).length;
     h += `<div class="card" style="margin-top:14px"><h2>Revisiones del WASDE de ${RID ? ridLabel(RID, true) : "–"} vs ${PREV_RID ? ridLabel(PREV_RID, true) : "–"}${one ? ` · ${regEs(st.revReg)}` : ""}</h2>
       <p class="note">${one ? `Balance completo de ${regEs(st.revReg)} en el informe, con su variación contra el mes anterior (${nChg} rubro${nChg === 1 ? "" : "s"} con cambios), en millones de toneladas.` : "Cambios por país/región y rubro, en millones de toneladas. Primero los países, ordenados por magnitud del cambio; después los agregados regionales."}</p>
       <div class="bar">${commSeg(["complejo", ...COMMS], "revComm")}
-        <label>País / región <select data-k="revReg"><option value="">Todos (solo cambios)</option>${regOpts.map((r) => `<option value="${r}" ${st.revReg === r ? "selected" : ""}>${regEs(r)}${AGG.has(r) ? " (agregado)" : ""}</option>`).join("")}</select></label></div>
+        <label>País / región <select data-k="revReg"><option value="">Todos (solo cambios)</option>${regOpts.map((r) => `<option value="${r}" ${st.revReg === r ? "selected" : ""}>${regEs(r)}${AGG.has(r) ? " (agregado)" : ""}</option>`).join("")}</select></label>
+        <label>Campaña <select data-k="revMy"><option value="">Todas</option>${myOpts.map((m) => `<option value="${m}" ${st.revMy === m ? "selected" : ""}>${m}</option>`).join("")}</select></label></div>
       <div class="tbl-wrap"><table><thead><tr><th>País / región</th><th style="text-align:left">Producto</th><th style="text-align:left">Rubro</th><th>Campaña</th><th>${PREV_RID ? ridLabel(PREV_RID) : ""}</th><th class="cur">${RID ? ridLabel(RID) : ""}</th><th>Δ</th><th>Δ %</th></tr></thead><tbody>
       ${rows.length ? rows.map((r) => `<tr><td>${regEs(r.region)}${AGG.has(r.region) ? '<span class="tag">agregado</span>' : ""}</td><td style="text-align:left">${P[r.c].name}</td><td style="text-align:left">${lbl(r.c, r.a)}</td><td>${r.my}</td>${cell(r.prv[0], r.a, wSrc(r.c, r.region, r.a, r.my, PREV_RID, r.prv))}${cell(r.cur[0], r.a, wSrc(r.c, r.region, r.a, r.my, RID, r.cur), "cur")}<td class="${cls(r.d)}">${fmtD(r.d)}</td><td class="${cls(r.d)}">${r.prv[0] ? fmtD((100 * r.d) / r.prv[0], null, true) : "–"}</td></tr>`).join("") : `<tr><td colspan="8">Sin revisiones.</td></tr>`}
       </tbody></table></div></div>`;
@@ -440,7 +444,46 @@
     ch.update();
   }
 
-  // ================================================================= EE.UU.
+  // ================================================================= POR PAÍS (WASDE, en toneladas)
+  function viewPais() {
+    const list = st.pComm === "complejo" ? SOY : st.pComm === "todos" ? COMMS : [st.pComm];
+    // países (no agregados) que aparecen en las tablas del WASDE de los productos elegidos
+    const regSet = new Set();
+    for (const c of list) for (const r of Object.keys(W.series[c] || {})) if (!AGG.has(r) || r === "World") regSet.add(r);
+    const KEY = ["United States", "Brazil", "Argentina", "Paraguay", "China", "European Union", "India"];
+    const regs = [...regSet].sort((x, y) => (x === "World") - (y === "World") || ((KEY.indexOf(x) + 1 || 99) - (KEY.indexOf(y) + 1 || 99)) || regEs(x).localeCompare(regEs(y), "es"));
+    if (!regSet.has(st.pReg)) st.pReg = regSet.has("United States") ? "United States" : regs[0];
+    const R = st.pReg;
+    let h = `<div class="bar"><div class="seg" data-seg="pComm">${["complejo", ...COMMS, "todos"].map((c) => `<button data-v="${c}" class="${st.pComm === c ? "on" : ""}">${c === "complejo" ? "Complejo soja" : c === "todos" ? "Todos" : P[c].name}</button>`).join("")}</div>
+      <label>País <select data-k="pReg">${regs.map((r) => `<option value="${esc(r)}" ${r === R ? "selected" : ""}>${regEs(r)}</option>`).join("")}</select></label></div>
+      <p class="note">Balance de ${regEs(R)} según el WASDE de ${RID ? ridLabel(RID, true) : "–"}, en <b>millones de toneladas</b> (tablas mundiales del informe). La columna sombreada es la proyección actual; “mes ant.” es la misma campaña en el informe previo.</p>`;
+    let any = false;
+    for (const c of list) {
+      const s = W.series[c] && W.series[c][R];
+      if (!s) continue;
+      const attrs = ROWS[c].filter((a) => a === "su" ? s.es && s.dom : s[a]);
+      const mys = [...new Set(Object.values(s).flatMap((am) => Object.keys(am).filter((my) => am[my][RID])))].sort();
+      if (!mys.length) continue;
+      any = true;
+      const myP = mys[mys.length - 1], myA = mys.length > 1 ? mys[mys.length - 2] : null;
+      const tag = (my) => { const v = s.es && s.es[my] && s.es[my][RID]; return v && v[3] ? (/^e/i.test(v[3]) ? " E" : /^p/i.test(v[3]) ? " P" : "") : ""; };
+      const cols = mys.slice(0, -1).map((my) => ({ my, rid: RID, lab: my + tag(my) })).concat([{ my: myP, rid: PREV_RID, lab: `${myP} P (${ridLabel(PREV_RID)})`, cmp: true }, { my: myP, rid: RID, lab: `${myP} P (${ridLabel(RID)})`, cur: true }]);
+      h += `<div class="card" style="margin-bottom:14px"><h2>${P[c].name} · ${regEs(R)}</h2><p class="note">${WASDE_TITLE[c]} · Mt${attrs.includes("su") ? " · stock/uso en %" : ""}</p><div class="tbl-wrap"><table><thead><tr><th>Rubro</th>${cols.map((k) => `<th class="${k.cur ? "cur" : k.cmp ? "cmp" : ""}">${k.lab}</th>`).join("")}<th>Δ m/m</th><th>Δ m/m %</th>${myA ? `<th>Δ vs ${myA}</th>` : ""}</tr></thead><tbody>`;
+      for (const a of attrs) {
+        const vs = cols.map((k) => wv(c, R, a, k.my, k.rid));
+        const cur = vs[vs.length - 1], prv = vs[vs.length - 2], ly = myA ? wv(c, R, a, myA, RID) : null;
+        const dm = cur && prv ? cur[0] - prv[0] : null, dy = cur && ly ? cur[0] - ly[0] : null;
+        const pct = a !== "su" && dm != null && prv[0] ? fmtD((100 * dm) / Math.abs(prv[0]), null, true) : "–";
+        h += `<tr class="${a === "es" ? "sep" : ""}"><td>${lbl(c, a)}</td>${vs.map((v, i) => v ? cell(v[0], a, a === "su" ? null : wSrc(c, R, a, cols[i].my, cols[i].rid, v), cols[i].cur ? "cur" : cols[i].cmp ? "cmp" : "") : `<td>–</td>`).join("")}<td class="${cls(dm)}">${fmtD(dm, a)}</td><td class="${cls(dm)}">${pct}</td>${myA ? `<td class="${cls(dy)}">${fmtD(dy, a)}</td>` : ""}</tr>`;
+      }
+      h += `</tbody></table></div></div>`;
+    }
+    if (!any) h += `<div class="card">${regEs(R)} no figura en las tablas del WASDE para este producto. Elegí otro país o mirá su historia en la pestaña Países (PSD).</div>`;
+    if (R === "United States" && W.us && list.includes("soja")) h += `<details class="card"><summary style="cursor:pointer;font-weight:600">EE.UU. en unidades originales del USDA (bushels, libras, short tons)</summary><div style="margin-top:12px">${viewUSA()}</div></details>`;
+    return h;
+  }
+
+  // ================================================================= EE.UU. (unidades USDA)
   function viewUSA() {
     if (!W.us) return `<div class="card">Sin datos.</div>`;
     const U = W.us, cur = U.cur;
@@ -490,7 +533,7 @@
     killCharts(); SRC = []; pop.style.display = "none";
     renderTabs();
     const v = $("#view");
-    const map = { resumen: [viewResumen], mundo: [viewMundo, afterMundo], paises: [viewPaises, afterPaises], complejo: [viewComplejo, afterComplejo], evolucion: [viewEvolucion, afterEvolucion], usa: [viewUSA], fuentes: [viewFuentes] };
+    const map = { resumen: [viewResumen], mundo: [viewMundo, afterMundo], paises: [viewPaises, afterPaises], complejo: [viewComplejo, afterComplejo], evolucion: [viewEvolucion, afterEvolucion], usa: [viewPais], fuentes: [viewFuentes] };
     const [fn, after] = map[st.tab] || map.resumen;
     v.innerHTML = fn();
     bindSeg(v);
