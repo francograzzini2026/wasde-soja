@@ -100,7 +100,10 @@ footer{max-width:1320px;margin:0 auto;padding:8px 16px 30px;color:var(--muted);f
 <footer>Fuentes: USDA OCE/WAOB — WASDE (archivo oficial ESMIS, Cornell Mann Library) y USDA FAS — PSD Online. Hacé clic en cualquier valor para ver su fuente y abrir el documento original.</footer>
 <div id="pop" role="dialog"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="data.js" charset="utf-8"></script>
-<script src="app.js" charset="utf-8"></script>
+<script>
+  // evita que el navegador muestre datos viejos: la versión cambia cada 10 minutos
+  (function () { var v = Math.floor(Date.now() / 6e5);
+    document.write('<script src="data.js?v=' + v + '" charset="utf-8"><\/script><script src="app.js?v=' + v + '" charset="utf-8"><\/script>'); })();
+</script>
 </body>
 </html>

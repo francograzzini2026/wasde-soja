@@ -179,7 +179,7 @@
   }
 
   // ---------- estado
-  const st = { tab: "resumen", comm: "soja", country: "AR", supAttr: "prod", demAttr: "dom", year: null, evReg: "World", evAttr: "es", revComm: "complejo", hist: 10 };
+  const st = { tab: "resumen", comm: "soja", country: "AR", supAttr: "prod", demAttr: "dom", year: null, evReg: "World", evAttr: "es", revComm: "complejo", revReg: "", hist: 10 };
   try { Object.assign(st, JSON.parse(localStorage.getItem("wasde-soja") || "{}")); } catch (e) { /* sin storage */ }
   const save = () => { try { localStorage.setItem("wasde-soja", JSON.stringify(st)); } catch (e) { /* */ } };
 
@@ -216,18 +216,34 @@
     h += `</div>`;
     // Revisiones
     const list = st.revComm === "complejo" ? SOY : [st.revComm];
+    // regiones disponibles (con dato en ambos informes) para el filtro
+    const regSet = new Set();
+    for (const c of list) {
+      const s = W.series[c] || {};
+      for (const region of Object.keys(s)) if (Object.values(s[region]).some((am) => Object.values(am).some((v) => v[RID] && v[PREV_RID]))) regSet.add(region);
+    }
+    const regOpts = [...regSet].sort((x, y) => (AGG.has(x) - AGG.has(y)) || regEs(x).localeCompare(regEs(y), "es"));
+    if (st.revReg && !regSet.has(st.revReg)) st.revReg = "";
+    const one = !!st.revReg;
     const rows = [];
     for (const c of list) {
       const s = W.series[c] || {};
-      for (const region of Object.keys(s)) for (const a of Object.keys(s[region])) for (const my of Object.keys(s[region][a])) {
-        const cur = s[region][a][my][RID], prv = s[region][a][my][PREV_RID];
-        if (cur && prv && Math.abs(cur[0] - prv[0]) > 0.0049) rows.push({ c, region, a, my, cur, prv, d: cur[0] - prv[0] });
+      for (const region of Object.keys(s)) {
+        if (one && region !== st.revReg) continue;
+        for (const a of Object.keys(s[region])) for (const my of Object.keys(s[region][a])) {
+          const cur = s[region][a][my][RID], prv = s[region][a][my][PREV_RID];
+          // con un país elegido se muestra su balance completo (también lo que no cambió)
+          if (cur && prv && (one || Math.abs(cur[0] - prv[0]) > 0.0049)) rows.push({ c, region, a, my, cur, prv, d: cur[0] - prv[0] });
+        }
       }
     }
-    rows.sort((x, y) => (AGG.has(x.region) - AGG.has(y.region)) || Math.abs(y.d) - Math.abs(x.d));
-    h += `<div class="card" style="margin-top:14px"><h2>Revisiones del WASDE de ${RID ? ridLabel(RID, true) : "–"} vs ${PREV_RID ? ridLabel(PREV_RID, true) : "–"}</h2>
-      <p class="note">Cambios por país/región y rubro, en millones de toneladas. Primero los países, ordenados por magnitud del cambio; después los agregados regionales.</p>
-      <div class="bar">${commSeg(["complejo", ...COMMS], "revComm")}</div>
+    if (one) rows.sort((x, y) => (list.indexOf(x.c) - list.indexOf(y.c)) || y.my.localeCompare(x.my));
+    else rows.sort((x, y) => (AGG.has(x.region) - AGG.has(y.region)) || Math.abs(y.d) - Math.abs(x.d));
+    const nChg = rows.filter((r) => Math.abs(r.d) > 0.0049).length;
+    h += `<div class="card" style="margin-top:14px"><h2>Revisiones del WASDE de ${RID ? ridLabel(RID, true) : "–"} vs ${PREV_RID ? ridLabel(PREV_RID, true) : "–"}${one ? ` · ${regEs(st.revReg)}` : ""}</h2>
+      <p class="note">${one ? `Balance completo de ${regEs(st.revReg)} en el informe, con su variación contra el mes anterior (${nChg} rubro${nChg === 1 ? "" : "s"} con cambios), en millones de toneladas.` : "Cambios por país/región y rubro, en millones de toneladas. Primero los países, ordenados por magnitud del cambio; después los agregados regionales."}</p>
+      <div class="bar">${commSeg(["complejo", ...COMMS], "revComm")}
+        <label>País / región <select data-k="revReg"><option value="">Todos (solo cambios)</option>${regOpts.map((r) => `<option value="${r}" ${st.revReg === r ? "selected" : ""}>${regEs(r)}${AGG.has(r) ? " (agregado)" : ""}</option>`).join("")}</select></label></div>
       <div class="tbl-wrap"><table><thead><tr><th>País / región</th><th style="text-align:left">Producto</th><th style="text-align:left">Rubro</th><th>Campaña</th><th>${PREV_RID ? ridLabel(PREV_RID) : ""}</th><th class="cur">${RID ? ridLabel(RID) : ""}</th><th>Δ</th><th>Δ %</th></tr></thead><tbody>
       ${rows.length ? rows.map((r) => `<tr><td>${regEs(r.region)}${AGG.has(r.region) ? '<span class="tag">agregado</span>' : ""}</td><td style="text-align:left">${P[r.c].name}</td><td style="text-align:left">${lbl(r.c, r.a)}</td><td>${r.my}</td>${cell(r.prv[0], r.a, wSrc(r.c, r.region, r.a, r.my, PREV_RID, r.prv))}${cell(r.cur[0], r.a, wSrc(r.c, r.region, r.a, r.my, RID, r.cur), "cur")}<td class="${cls(r.d)}">${fmtD(r.d)}</td><td class="${cls(r.d)}">${r.prv[0] ? fmtD((100 * r.d) / r.prv[0], null, true) : "–"}</td></tr>`).join("") : `<tr><td colspan="8">Sin revisiones.</td></tr>`}
       </tbody></table></div></div>`;
